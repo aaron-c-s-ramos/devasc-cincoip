@@ -1,0 +1,23 @@
+# Python cache files
+__pycache__/
+*.py[cod]
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Test and tool caches
+.pytest_cache/
+.coverage
+
+# Editor and operating system files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Reports that the application saves during tests and demonstrations
+report.txt
+report.json
+report.csv
