@@ -95,10 +95,20 @@ class FetchPublicIpTests(unittest.TestCase):
 
     @mock.patch("cincoip.api_client.get_json")
     def test_no_ipv6_connection_gives_a_clear_message(self, fake_get_json):
-        fake_get_json.side_effect = api_client.ApiError("connection failed")
+        fake_get_json.side_effect = api_client.ConnectivityApiError(
+            "connection failed"
+        )
         result = api_client.fetch_public_ip(6)
         self.assertIsNone(result["address"])
         self.assertIn("IPv6 is not available", result["error"])
+
+    @mock.patch("cincoip.api_client.get_json")
+    def test_ipv6_http_error_is_not_reported_as_unavailable(self, fake_get_json):
+        fake_get_json.side_effect = api_client.ApiError("HTTP status 429")
+        result = api_client.fetch_public_ip(6)
+        self.assertIsNone(result["address"])
+        self.assertIn("IPv6 lookup failed", result["error"])
+        self.assertNotIn("not available on this network", result["error"])
 
     @mock.patch("cincoip.api_client.get_json")
     def test_ipv4_failure_gives_a_message(self, fake_get_json):

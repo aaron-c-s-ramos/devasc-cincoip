@@ -30,6 +30,10 @@ class ApiError(Exception):
     """An API request did not give data that the application can use."""
 
 
+class ConnectivityApiError(ApiError):
+    """An API request failed because the host could not be reached."""
+
+
 def get_json(url, params=None, timeout=TIMEOUT_SECONDS):
     """Send an HTTP GET request and return the JSON reply as a dictionary.
 
@@ -46,11 +50,13 @@ def get_json(url, params=None, timeout=TIMEOUT_SECONDS):
             url, params=params, headers=headers, timeout=timeout
         )
     except requests.exceptions.Timeout:
-        raise ApiError(
+        raise ConnectivityApiError(
             "the server did not answer in %d seconds" % timeout
         ) from None
     except requests.exceptions.ConnectionError:
-        raise ApiError("the connection to the server failed") from None
+        raise ConnectivityApiError(
+            "the connection to the server failed"
+        ) from None
     except requests.exceptions.RequestException as error:
         raise ApiError("the request failed: %s" % error) from None
 
@@ -95,10 +101,12 @@ def fetch_public_ip(version):
     try:
         data = get_json(IPIFY_URLS[version], params={"format": "json"})
     except ApiError as error:
-        if version == 6:
+        if version == 6 and isinstance(error, ConnectivityApiError):
             result["error"] = (
                 "IPv6 is not available on this network (%s)" % error
             )
+        elif version == 6:
+            result["error"] = "The IPv6 lookup failed (%s)" % error
         else:
             result["error"] = "The IPv4 lookup failed (%s)" % error
         return result
